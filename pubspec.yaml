@@ -1,0 +1,50 @@
+name: transportflutter
+description: "A new Flutter project."
+publish_to: 'none' # Remove this line if you wish to publish to pub.dev
+
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.5.4
+
+dependencies:
+  flutter:
+    sdk: flutter
+  sqflite: ^2.0.0+4 #new
+  path: ^1.9.0 #new
+  http: ^0.13.4 #new
+  dio: ^5.1.1 #new
+  path_provider: ^2.0.11 #new
+  cupertino_icons: ^1.0.8
+  intl: ^0.17.0 #new
+  flutter_spinkit: ^5.1.0 #new
+  session_storage: ^0.0.1 #new
+  shared_preferences: ^2.0.15 #new
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^5.0.0
+  flutter_launcher_icons: ^0.14.1
+  flutter_native_splash: ^2.2.17
+  
+
+flutter_icons:
+  color: "#D4FFE2FF"
+  image: assets/images/logo.png
+  android: true
+  ios: true
+  web: false
+
+flutter_native_splash:
+  color: "#ffffff"
+  image: lib/assets/images/logo.png
+  android: true
+  ios: true
+  web: false
+
+flutter:
+  uses-material-design: true
+  assets:
+    - lib/assets/database/bdd.db #new
+    - lib/assets/images/logo.png #new
