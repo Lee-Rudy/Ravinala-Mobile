@@ -48,3 +48,4 @@ flutter:
   assets:
     - lib/assets/database/bdd.db #new
     - lib/assets/images/logo.png #new
+    - lib/assets/images/ravicheck.png #new

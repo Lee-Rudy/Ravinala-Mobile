@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:transportflutter/services/api_services.dart';
 
 class LoginScreen extends StatefulWidget {
   @override
@@ -12,6 +14,117 @@ class _LoginScreenState extends State<LoginScreen> {
 
   // Clé pour le formulaire
   final _formKey = GlobalKey<FormState>();
+
+  // Indicateur de chargement
+  bool _isLoading = false;
+
+  // Instance de ApiService
+  final ApiService apiService = ApiService();
+
+  /// Fonction pour afficher le pop-up d'erreur
+  void _showErrorDialog(String message) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Row(
+            children: [
+              Icon(Icons.error, color: Colors.red),
+              SizedBox(width: 10),
+              Text(
+                'Erreur',
+                style: TextStyle(color: Colors.red),
+              ),
+            ],
+          ),
+          content: Text(
+            message,
+            style: TextStyle(color: Colors.red),
+          ),
+          actions: [
+            TextButton(
+              child: Text(
+                'OK',
+                style: TextStyle(color: Colors.red),
+              ),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  /// Fonction d'authentification
+  Future<void> _authenticate() async {
+    if (!_formKey.currentState!.validate()) {
+      return;
+    }
+
+    String carName = carNameController.text.trim();
+    String password = passwordController.text.trim();
+
+    setState(() {
+      _isLoading = true;
+    });
+
+    // Afficher le loading
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => Center(
+        child: CircularProgressIndicator(),
+      ),
+    );
+
+    try {
+      final result = await apiService.login(carName, password);
+
+      Navigator.of(context).pop(); // Fermer le loading
+
+      if (result['success']) {
+        String loginName = result['user']['nom_car_login'];
+        print('Utilisateur connecté : $loginName');
+
+        // Stocker le nom_car_login dans le stockage local
+        SharedPreferences prefs = await SharedPreferences.getInstance();
+        await prefs.setString('nom_car_login', loginName);
+        print('nom_car_login stocké dans SharedPreferences');
+
+        // Afficher un message de succès (facultatif)
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(result['message']),
+            backgroundColor: Colors.green,
+          ),
+        );
+
+        // Redirection après authentification réussie via les routes nommées
+        Navigator.pushReplacementNamed(context, '/');
+      } else {
+        // Afficher un message d'erreur dans un pop-up
+        print('Erreur lors de la connexion : ${result['message']}');
+        _showErrorDialog(result['message']);
+      }
+    } catch (e) {
+      Navigator.of(context).pop(); // Fermer le loading
+      print('Erreur lors de l\'authentification : ${e.toString()}'); // Log supplémentaire
+      _showErrorDialog('Une erreur est survenue. Veuillez réessayer.');
+    } finally {
+      setState(() {
+        _isLoading = false;
+      });
+    }
+  }
+
+  @override
+  void dispose() {
+    carNameController.dispose();
+    passwordController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -27,7 +140,7 @@ class _LoginScreenState extends State<LoginScreen> {
         child: Center(
           child: SingleChildScrollView(
             child: Container(
-              width: screenWidth * 0.5, // Ajuste la largeur à 50% de l'écran
+              width: screenWidth * 0.4, // Ajuste la largeur à 80% de l'écran
               padding: const EdgeInsets.all(20.0),
               decoration: BoxDecoration(
                 color: Colors.white, // Couleur de fond du formulaire
@@ -129,19 +242,7 @@ class _LoginScreenState extends State<LoginScreen> {
                             borderRadius: BorderRadius.circular(10.0),
                           ),
                         ),
-                        onPressed: () {
-                          // Valide le formulaire
-                          if (_formKey.currentState!.validate()) {
-                            // Si le formulaire est valide, procéder à la connexion
-                            String carName = carNameController.text.trim();
-                            String password = passwordController.text.trim();
-
-                            // Vous pouvez ajouter ici votre logique de connexion (authentification)
-
-                            // Redirection après connexion
-                            Navigator.pushReplacementNamed(context, '/');
-                          }
-                        },
+                        onPressed: _isLoading ? null : _authenticate,
                         child: const Text(
                           'Se connecter',
                           style: TextStyle(

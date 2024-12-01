@@ -239,18 +239,18 @@ class _MyHomePageState extends State<MyHomePage> {
                       ),
                     ],
                   ),
-                  ListTile(
-                    leading: Icon(Icons.person),
-                    iconColor: Color(0xFF45B48E),
-                    title: Text('Se déconnecter'),
-                    onTap: () {
-                      Navigator.pushReplacementNamed(context, '/disconnect');
-                    },
-                  ),
+                  // ListTile(
+                  //   leading: Icon(Icons.person),
+                  //   iconColor: Color(0xFF45B48E),
+                  //   title: Text('Se déconnecter'),
+                  //   onTap: () {
+                  //     Navigator.pushReplacementNamed(context, '/disconnect');
+                  //   },
+                  // ),
                   ListTile(
                     leading: Icon(Icons.login),
                     iconColor: Color(0xFF45B48E),
-                    title: Text('Se connecter'),
+                    title: Text('Se Deconnecter'),
                     onTap: () {
                       Navigator.pushReplacementNamed(context, '/login');
                     },
