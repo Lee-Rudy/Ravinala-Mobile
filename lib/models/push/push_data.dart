@@ -100,11 +100,13 @@ class Bouton {
   final String datetimeDepart;
   final String datetimeArrivee;
   final String nomVoiture;
+  final String motif;
 
   Bouton({
     required this.datetimeDepart,
     required this.datetimeArrivee,
     required this.nomVoiture,
+    required this.motif,
   });
 
   Map<String, dynamic> toMap() {
@@ -112,6 +114,7 @@ class Bouton {
       'DatetimeDepart': datetimeDepart,    // Passage en PascalCase
       'DatetimeArrivee': datetimeArrivee,  // Passage en PascalCase
       'NomVoiture': nomVoiture,   
+      'motif': motif,
     };
   }
 }

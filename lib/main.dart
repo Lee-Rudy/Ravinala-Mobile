@@ -152,14 +152,17 @@ class _MyHomePageState extends State<MyHomePage> {
                     decoration: BoxDecoration(
                       color: const Color.fromARGB(255, 251, 247, 255),
                     ),
-                    child: Text(
-                      'Menu',
-                      style: TextStyle(
-                        color: const Color.fromARGB(255, 23, 23, 23),
-                        fontSize: 24,
+                    child: Center(
+                      child: Text(
+                        'Menu Ravicheck',
+                        style: TextStyle(
+                          color: Color(0xFF45B48E),
+                          fontSize: 24,
+                        ),
                       ),
                     ),
                   ),
+
                   // Ajouter les éléments du menu ici
                   ListTile(
                     leading: Icon(Icons.add_home_rounded),

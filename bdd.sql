@@ -75,7 +75,8 @@ create table btn
     id integer primary key,
     datetime_depart text,
     datetime_arrivee text,
-    nomVoiture text
+    nomVoiture text,
+    motif text
 );
 
 --insertion direct

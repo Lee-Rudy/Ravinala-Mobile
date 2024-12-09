@@ -33,7 +33,7 @@ class _ArchiveScreenRamassageState extends State<ArchiveScreenRamassage> {
     final List<PointageImprevu> pointageImprevuList =
         piRecords.map((map) => PointageImprevu.fromMap(map)).toList();
 
-    // Récupération des données du bouton (horaires de départ et d'arrivée)
+    // Récupération des données du bouton (horaires de départ et d'arrivée + motif)
     final btnRecords = await db.query('btn');
     final List<Map<String, dynamic>> btnList = btnRecords.toList();
 
@@ -209,8 +209,7 @@ class _ArchiveScreenRamassageState extends State<ArchiveScreenRamassage> {
           children: [
             Text('Car: ${imprevu.nomVoiture}'),
             if (imprevu.datetimeImprevu.isNotEmpty) ...[
-              Text(
-                    'Nom: ${imprevu.nom}'),
+              Text('Nom: ${imprevu.nom}'),
               Text(
                   'Date imprévu: ${DateFormat('yyyy-MM-dd').format(DateTime.parse(imprevu.datetimeImprevu))}'),
               Text(
@@ -280,6 +279,9 @@ class _ArchiveScreenRamassageState extends State<ArchiveScreenRamassage> {
     final datetimeDepart = btnRecord['datetime_depart'];
     final datetimeArrivee = btnRecord['datetime_arrivee'];
     final nomCar = btnRecord['nomVoiture'] ?? 'Inconnu';
+    final motif = (btnRecord['motif'] == null || (btnRecord['motif'] as String).trim().isEmpty)
+        ? 'rien à signaler'
+        : btnRecord['motif'];
 
     return Container(
       margin: EdgeInsets.symmetric(vertical: 4.0, horizontal: 8.0),
@@ -297,7 +299,9 @@ class _ArchiveScreenRamassageState extends State<ArchiveScreenRamassage> {
         subtitle: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            Text('Motif: $motif'),
             if (datetimeDepart != null && datetimeDepart.isNotEmpty) ...[
+              SizedBox(height: 8),
               Text(
                 'Départ:',
                 style: TextStyle(fontWeight: FontWeight.bold),
@@ -375,7 +379,7 @@ class _ArchiveScreenRamassageState extends State<ArchiveScreenRamassage> {
                 combinedPointageRecords.addAll(pointageRamassageRecords);
                 combinedPointageRecords.addAll(pointageImprevuRecords);
 
-                // Trier les enregistrements combinés par matricule ou autre critère
+                // Trier les enregistrements combinés par matricule
                 combinedPointageRecords.sort((a, b) {
                   String aMatricule;
                   String bMatricule;

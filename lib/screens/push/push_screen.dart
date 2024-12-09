@@ -53,6 +53,7 @@ class _PushDataScreenState extends State<PushDataScreen> {
             datetimeDepart: e.datetimeDepart,
             datetimeArrivee: e.datetimeArrivee,
             nomVoiture: e.nomVoiture,
+            motif: e.motif,
           )).toList();
 
       final imprevuList = imprevuListRaw.map((e) => PointageImprevu(

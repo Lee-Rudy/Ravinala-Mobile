@@ -230,74 +230,98 @@ class _ListDepotScreenState extends State<ListDepotScreen> {
     TextEditingController _nomController = TextEditingController(); // Nouveau contrôleur pour le nom
 
     showDialog(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: Text('Ajouter un Matricule'),
-          content: StatefulBuilder(
-            builder: (context, setState) {
-              return SingleChildScrollView( // Pour éviter le débordement
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
+  context: context,
+  builder: (context) {
+    return AlertDialog(
+      title: Text('Ajouter un Matricule'),
+      content: StatefulBuilder(
+        builder: (context, setState) {
+          return SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                DropdownButton<String>(
+                  value: _selectedUserType,
+                  items: ['Stagiaire', 'Employé']
+                      .map((type) => DropdownMenuItem(
+                            value: type,
+                            child: Text(type),
+                          ))
+                      .toList(),
+                  onChanged: (value) {
+                    setState(() {
+                      _selectedUserType = value!;
+                      _matriculeController.clear(); // Efface l’entrée précédente
+                    });
+                  },
+                ),
+                Row(
                   children: [
-                    DropdownButton<String>(
-                      value: _selectedUserType,
-                      items: ['Stagiaire', 'Employé']
-                          .map((type) => DropdownMenuItem(
-                                value: type,
-                                child: Text(type),
-                              ))
-                          .toList(),
-                      onChanged: (value) {
-                        setState(() {
-                          _selectedUserType = value!;
-                          _matriculeController.clear();
-                        });
-                      },
-                    ),
-                    TextField(
-                      controller: _matriculeController,
-                      keyboardType: TextInputType.number,
-                      decoration: InputDecoration(
-                        hintText: _selectedUserType == 'Stagiaire' ? 'ST-' : 'Matricule',
+                    Expanded(
+                      flex: 2, // Contrôle la taille du préfixe
+                      child: TextField(
+                        readOnly: true, // Rend le préfixe non modifiable
+                        decoration: InputDecoration(
+                          hintText: _selectedUserType == 'Stagiaire' ? 'ST-' : '00',
+                        ),
+                        controller: TextEditingController(
+                          text: _selectedUserType == 'Stagiaire' ? 'ST-' : '00',
+                        ),
                       ),
                     ),
-                    TextField(
-                      controller: _nomController, // Contrôleur pour le nom
-                      decoration: InputDecoration(
-                        hintText: 'Nom',
+                    Expanded(
+                      flex: 5, // Contrôle la taille de la partie modifiable
+                      child: TextField(
+                        controller: _matriculeController,
+                        keyboardType: TextInputType.number,
+                        decoration: InputDecoration(
+                          hintText: 'Entrez le reste du matricule',
+                        ),
                       ),
                     ),
                   ],
                 ),
-              );
-            },
-          ),
-          actions: [
-            TextButton(
-              child: Text('Annuler'),
-              onPressed: () => Navigator.of(context).pop(),
+                TextField(
+                  controller: _nomController,
+                  decoration: InputDecoration(
+                    hintText: 'Nom',
+                  ),
+                ),
+              ],
             ),
-            TextButton(
-              child: Text('Ajouter'),
-              onPressed: () {
-                String matricule = _matriculeController.text.trim();
-                String nom = _nomController.text.trim(); // Récupérer le nom saisi
-                if (_selectedUserType == 'Stagiaire' && !matricule.startsWith('ST-')) {
-                  matricule = 'ST-$matricule';
-                }
-                if (matricule.isNotEmpty && nom.isNotEmpty) {
-                  _addImprevu(matricule, nom); // Passer le nom à la méthode
-                  Navigator.of(context).pop();
-                } else {
-                  _showErrorDialog('Veuillez entrer un matricule et un nom valides.');
-                }
-              },
-            ),
-          ],
-        );
-      },
+          );
+        },
+      ),
+      actions: [
+        TextButton(
+          child: Text('Annuler'),
+          onPressed: () => Navigator.of(context).pop(),
+        ),
+        TextButton(
+          child: Text('Ajouter'),
+          onPressed: () {
+            String matricule = _matriculeController.text.trim();
+            String nom = _nomController.text.trim();
+
+            // Ajoute automatiquement le préfixe au matricule final
+            if (_selectedUserType == 'Stagiaire') {
+              matricule = 'ST-$matricule';
+            } else if (_selectedUserType == 'Employé') {
+              matricule = '00$matricule';
+            }
+
+            if (matricule.isNotEmpty && nom.isNotEmpty) {
+              _addImprevu(matricule, nom); // Passe les données à la méthode
+              Navigator.of(context).pop();
+            } else {
+              _showErrorDialog('Veuillez entrer un matricule et un nom valides.');
+            }
+          },
+        ),
+      ],
     );
+  },
+);
   }
 
   void _markPresence(int idUsager) {

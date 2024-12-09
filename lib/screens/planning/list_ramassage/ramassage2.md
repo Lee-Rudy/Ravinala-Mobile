@@ -1,3 +1,4 @@
+// import statements
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:sqflite/sqflite.dart';
@@ -106,10 +107,9 @@ class _ListRamassageScreenState extends State<ListRamassageScreen> {
               'nomVoiture': nomVoiture,
               'datetime_ramassage': estPresent
                   ? (pointageDatetime != null
-                      ? DateFormat("yyyy-MM-dd HH:mm:ss")
-                          .format(pointageDatetime)
+                      ? pointageDatetime.toUtc().toIso8601String()
                       : null)
-                  : DateFormat("yyyy-MM-dd").format(DateTime.now()), // Date d'absence pour les absents
+                  : DateTime.now().toUtc().toIso8601String(), // Date d'absence pour les absents
               'est_present': estPresent ? 1 : 0,
             },
             conflictAlgorithm:
@@ -126,10 +126,8 @@ class _ListRamassageScreenState extends State<ListRamassageScreen> {
       await db.insert(
         'btn',
         {
-          'datetime_depart':
-              DateFormat("yyyy-MM-dd HH:mm:ss").format(RamassageSession().datetimeDepart!),
-          'datetime_arrivee':
-              DateFormat("yyyy-MM-dd HH:mm:ss").format(RamassageSession().datetimeArrivee!),
+          'datetime_depart': RamassageSession().datetimeDepart!.toUtc().toIso8601String(),
+          'datetime_arrivee': RamassageSession().datetimeArrivee!.toUtc().toIso8601String(),
           'nomVoiture': RamassageSession().nomCar,
         },
         conflictAlgorithm: ConflictAlgorithm.replace,
@@ -144,8 +142,7 @@ class _ListRamassageScreenState extends State<ListRamassageScreen> {
           depart: _departKMController.text.trim(),
           fin: _finKMController.text.trim(),
           nomVoiture: RamassageSession().nomCar ?? 'Inconnu',
-          datetimeMatin:
-              DateFormat("yyyy-MM-dd HH:mm:ss").format(DateTime.now()),
+          datetimeMatin: DateTime.now().toUtc().toIso8601String(),
         );
 
         await db.insert(
@@ -209,15 +206,15 @@ class _ListRamassageScreenState extends State<ListRamassageScreen> {
   }
 
   // Méthode pour ajouter un pointage imprevu dans la base
-  Future<void> _addImprevu(String matricule) async {
+  Future<void> _addImprevu(String matricule, String nom) async {
     final db = await dbHelper.database;
 
-    String currentDateTime =
-        DateFormat("yyyy-MM-dd HH:mm:ss").format(DateTime.now());
+    String currentDateTime = DateTime.now().toUtc().toIso8601String();
     await db.insert(
       'pointage_usagers_imprevu',
       {
         'matricule': matricule,
+        'nom': nom, // Enregistrer le nom
         'datetime_imprevu': currentDateTime,
         'nomVoiture': RamassageSession().nomCar ?? 'Inconnu',
       },
@@ -233,72 +230,105 @@ class _ListRamassageScreenState extends State<ListRamassageScreen> {
     _showSuccessDialog('Pointage imprévu ajouté avec succès !');
   }
 
-  // Méthode pour afficher un popover (dialogue) pour saisir le matricule
+  // Méthode pour afficher un popover (dialogue) pour saisir le matricule et le nom
   void _showAddImprevuDialog() {
     _matriculeController.clear();
+    TextEditingController _nomController = TextEditingController(); // Nouveau contrôleur pour le nom
+
     showDialog(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: Text('Ajouter un Matricule'),
-          content: StatefulBuilder(
-            builder: (context, setState) {
-              return Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  DropdownButton<String>(
-                    value: _selectedUserType,
-                    items: ['Stagiaire', 'Employé']
-                        .map((type) => DropdownMenuItem(
-                              value: type,
-                              child: Text(type),
-                            ))
-                        .toList(),
-                    onChanged: (value) {
-                      setState(() {
-                        _selectedUserType = value!;
-                        _matriculeController.clear();
-                      });
-                    },
-                  ),
-                  TextField(
-                    controller: _matriculeController,
-                    keyboardType: _selectedUserType == 'Employé'
-                        ? TextInputType.number
-                        : TextInputType.number,
-                    decoration: InputDecoration(
-                      hintText:
-                          _selectedUserType == 'Stagiaire' ? 'ST-' : 'Matricule',
+  context: context,
+  builder: (context) {
+    return AlertDialog(
+      title: Text('Ajouter un Matricule'),
+      content: StatefulBuilder(
+        builder: (context, setState) {
+          return SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                DropdownButton<String>(
+                  value: _selectedUserType,
+                  items: ['Stagiaire', 'Employé']
+                      .map((type) => DropdownMenuItem(
+                            value: type,
+                            child: Text(type),
+                          ))
+                      .toList(),
+                  onChanged: (value) {
+                    setState(() {
+                      _selectedUserType = value!;
+                      _matriculeController.clear(); // Efface l’entrée précédente
+                    });
+                  },
+                ),
+                Row(
+                  children: [
+                    Expanded(
+                      flex: 2, // Contrôle la taille du préfixe
+                      child: TextField(
+                        readOnly: true, // Rend le préfixe non modifiable
+                        decoration: InputDecoration(
+                          hintText: _selectedUserType == 'Stagiaire' ? 'ST-' : '00',
+                        ),
+                        controller: TextEditingController(
+                          text: _selectedUserType == 'Stagiaire' ? 'ST-' : '00',
+                        ),
+                      ),
                     ),
+                    Expanded(
+                      flex: 5, // Contrôle la taille de la partie modifiable
+                      child: TextField(
+                        controller: _matriculeController,
+                        keyboardType: TextInputType.number,
+                        decoration: InputDecoration(
+                          hintText: 'Entrez le reste du matricule',
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                TextField(
+                  controller: _nomController,
+                  decoration: InputDecoration(
+                    hintText: 'Nom',
                   ),
-                ],
-              );
-            },
-          ),
-          actions: [
-            TextButton(
-              child: Text('Annuler'),
-              onPressed: () => Navigator.of(context).pop(),
+                ),
+              ],
             ),
-            TextButton(
-              child: Text('Ajouter'),
-              onPressed: () {
-                String matricule = _matriculeController.text.trim();
-                if (_selectedUserType == 'Stagiaire' && !matricule.startsWith('ST-')) {
-                  matricule = 'ST-$matricule';
-                }
-                if (matricule.isNotEmpty) {
-                  _addImprevu(matricule);
-                  Navigator.of(context).pop();
-                } else {
-                  _showErrorDialog('Veuillez entrer un matricule valide.');
-                }
-              },
-            ),
-          ],
-        );
-      },
+          );
+        },
+      ),
+      actions: [
+        TextButton(
+          child: Text('Annuler'),
+          onPressed: () => Navigator.of(context).pop(),
+        ),
+        TextButton(
+          child: Text('Ajouter'),
+          onPressed: () {
+            String matricule = _matriculeController.text.trim();
+            String nom = _nomController.text.trim();
+
+            // Ajoute automatiquement le préfixe au matricule final
+            if (_selectedUserType == 'Stagiaire') {
+              matricule = 'ST-$matricule';
+            } else if (_selectedUserType == 'Employé') {
+              matricule = '00$matricule';
+            }
+
+            if (matricule.isNotEmpty && nom.isNotEmpty) {
+              _addImprevu(matricule, nom); // Passe les données à la méthode
+              Navigator.of(context).pop();
+            } else {
+              _showErrorDialog('Veuillez entrer un matricule et un nom valides.');
+            }
+          },
+        ),
+      ],
     );
+  },
+);
+
   }
 
   void _markPresence(int idUsager) {
@@ -730,7 +760,7 @@ class _ListRamassageScreenState extends State<ListRamassageScreen> {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Informations du pointage imprevu
+          // Informations du pointage imprévu
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -740,11 +770,12 @@ class _ListRamassageScreenState extends State<ListRamassageScreen> {
                   style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
                 ),
                 SizedBox(height: 4),
+                Text('Nom: ${piItem.nom}'), // Afficher le nom
                 Text('Nom car: ${piItem.nomVoiture}'),
                 Text(
-                    'Date: ${DateFormat("yyyy-MM-dd").format(DateTime.parse(piItem.datetimeImprevu))}'),
+                    'Date: ${DateFormat("yyyy-MM-dd").format(DateTime.parse(piItem.datetimeImprevu).toLocal())}'),
                 Text(
-                    'Heure: ${DateFormat("HH:mm:ss").format(DateTime.parse(piItem.datetimeImprevu))}'),
+                    'Heure: ${DateFormat("HH:mm:ss").format(DateTime.parse(piItem.datetimeImprevu).toLocal())}'),
               ],
             ),
           ),

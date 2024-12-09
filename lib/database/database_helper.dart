@@ -209,6 +209,7 @@ Future<void> insertOrUpdatePlanningDepot(PlanningDepot pd) async
       nomVoiture: map['nomVoiture'] as String? ?? 'Inconnu',
       datetimeDepart: datetimeDepart ?? '',
       datetimeArrivee: datetimeArrivee ?? '',
+      motif: map['motif'] as String? ?? 'Aucun'
     );
   });
 }

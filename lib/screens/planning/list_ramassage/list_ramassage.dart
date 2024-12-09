@@ -45,6 +45,7 @@ class _ListRamassageScreenState extends State<ListRamassageScreen> {
   TextEditingController _departKMController = TextEditingController();
   TextEditingController _finKMController = TextEditingController();
   TextEditingController _matriculeController = TextEditingController();
+  TextEditingController _motifController = TextEditingController(); // Nouveau contrôleur pour le motif
 
   String _selectedUserType = 'Stagiaire'; // Par défaut
 
@@ -119,16 +120,18 @@ class _ListRamassageScreenState extends State<ListRamassageScreen> {
       }
     }
 
-    // Insertion des informations de départ/arrivée dans la table btn
+    // Insertion des informations de départ/arrivée et du motif dans la table btn
     if (RamassageSession().datetimeDepart != null &&
         RamassageSession().datetimeArrivee != null &&
         RamassageSession().nomCar != null) {
+      String finalMotif = _motifController.text.trim().isEmpty ? 'rien à signaler' : _motifController.text.trim();
       await db.insert(
         'btn',
         {
           'datetime_depart': RamassageSession().datetimeDepart!.toUtc().toIso8601String(),
           'datetime_arrivee': RamassageSession().datetimeArrivee!.toUtc().toIso8601String(),
           'nomVoiture': RamassageSession().nomCar,
+          'motif': finalMotif, // insertion du motif
         },
         conflictAlgorithm: ConflictAlgorithm.replace,
       );
@@ -167,6 +170,7 @@ class _ListRamassageScreenState extends State<ListRamassageScreen> {
     // Réinitialiser l'état après sauvegarde
     setState(() {
       RamassageSession().reset();
+      _motifController.clear(); // Réinitialiser le motif
       _combinedListFuture = fetchCombinedList(); // Recharger la liste
     });
 
@@ -180,7 +184,8 @@ class _ListRamassageScreenState extends State<ListRamassageScreen> {
         RamassageSession().datetimeDepart != null ||
         RamassageSession().datetimeArrivee != null ||
         _departKMController.text.isNotEmpty ||
-        _finKMController.text.isNotEmpty) {
+        _finKMController.text.isNotEmpty ||
+        _motifController.text.isNotEmpty) {
       // Demander une confirmation avant de quitter la page
       return await showDialog(
             context: context,
@@ -242,7 +247,7 @@ class _ListRamassageScreenState extends State<ListRamassageScreen> {
           title: Text('Ajouter un Matricule'),
           content: StatefulBuilder(
             builder: (context, setState) {
-              return SingleChildScrollView( // Ajouté pour éviter le débordement si le clavier est ouvert
+              return SingleChildScrollView(
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
@@ -257,20 +262,38 @@ class _ListRamassageScreenState extends State<ListRamassageScreen> {
                       onChanged: (value) {
                         setState(() {
                           _selectedUserType = value!;
-                          _matriculeController.clear();
+                          _matriculeController.clear(); // Efface l’entrée précédente
                         });
                       },
                     ),
-                    TextField(
-                      controller: _matriculeController,
-                      keyboardType: TextInputType.number,
-                      decoration: InputDecoration(
-                        hintText:
-                            _selectedUserType == 'Stagiaire' ? 'ST-' : 'Matricule',
-                      ),
+                    Row(
+                      children: [
+                        Expanded(
+                          flex: 2, // Contrôle la taille du préfixe
+                          child: TextField(
+                            readOnly: true, // Rend le préfixe non modifiable
+                            decoration: InputDecoration(
+                              hintText: _selectedUserType == 'Stagiaire' ? 'ST-' : '00',
+                            ),
+                            controller: TextEditingController(
+                              text: _selectedUserType == 'Stagiaire' ? 'ST-' : '00',
+                            ),
+                          ),
+                        ),
+                        Expanded(
+                          flex: 5, // Contrôle la taille de la partie modifiable
+                          child: TextField(
+                            controller: _matriculeController,
+                            keyboardType: TextInputType.number,
+                            decoration: InputDecoration(
+                              hintText: 'Entrez le reste du matricule',
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                     TextField(
-                      controller: _nomController, // Contrôleur pour le nom
+                      controller: _nomController,
                       decoration: InputDecoration(
                         hintText: 'Nom',
                       ),
@@ -289,12 +312,17 @@ class _ListRamassageScreenState extends State<ListRamassageScreen> {
               child: Text('Ajouter'),
               onPressed: () {
                 String matricule = _matriculeController.text.trim();
-                String nom = _nomController.text.trim(); // Récupérer le nom saisi
-                if (_selectedUserType == 'Stagiaire' && !matricule.startsWith('ST-')) {
+                String nom = _nomController.text.trim();
+
+                // Ajoute automatiquement le préfixe au matricule final
+                if (_selectedUserType == 'Stagiaire') {
                   matricule = 'ST-$matricule';
+                } else if (_selectedUserType == 'Employé') {
+                  matricule = '00$matricule';
                 }
+
                 if (matricule.isNotEmpty && nom.isNotEmpty) {
-                  _addImprevu(matricule, nom); // Passer le nom à la méthode
+                  _addImprevu(matricule, nom); // Passe les données à la méthode
                   Navigator.of(context).pop();
                 } else {
                   _showErrorDialog('Veuillez entrer un matricule et un nom valides.');
@@ -384,6 +412,36 @@ class _ListRamassageScreenState extends State<ListRamassageScreen> {
     if (confirm == true) {
       await _savePointage();
     }
+  }
+
+  // Méthode pour afficher le dialogue du motif
+  void _showMotifDialog() {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: Text('Ajouter un motif'),
+          content: TextField(
+            controller: _motifController,
+            decoration: InputDecoration(
+              hintText: 'Saisissez le motif',
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: Text('Annuler'),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop(); // Fermer le dialog, le motif est maintenant dans _motifController
+              },
+              child: Text('OK'),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   @override
@@ -553,7 +611,26 @@ class _ListRamassageScreenState extends State<ListRamassageScreen> {
                         ),
                         SizedBox(height: 16),
 
-                        // Liste combinée des usagers présents, absents et imprevu
+                        // Nouveau bouton pour ajouter le motif
+                        Container(
+                          width: double.infinity,
+                          margin: EdgeInsets.symmetric(vertical: 15.0),
+                          child: ElevatedButton(
+                            onPressed: _showMotifDialog,
+                            style: ElevatedButton.styleFrom(
+                              foregroundColor: Colors.white,
+                              backgroundColor: Colors.blueGrey,
+                              padding: EdgeInsets.symmetric(vertical: 16.0),
+                            ),
+                            child: Text(
+                              'Ajouter motif',
+                              style: TextStyle(
+                                  fontSize: 18.0, fontWeight: FontWeight.bold),
+                            ),
+                          ),
+                        ),
+
+                        // Liste combinée des usagers
                         ListView.builder(
                           key: PageStorageKey<String>('list_ramassage_key'),
                           itemCount: combinedList.length,

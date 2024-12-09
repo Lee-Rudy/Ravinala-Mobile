@@ -207,7 +207,7 @@ class _HomeScreenState extends State<HomeScreen> {
     },
     {
       'title': 'Étape 4',
-      'description': 'Envoyez les données et répétez l’opération si nécessaire.',
+      'description': 'Envoyez les données et répétez l’opération.',
       'icon': Icons.send,
     },
   ];
@@ -259,7 +259,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   subtitle: Text(
                     step['description']!,
                     style: TextStyle(
-                      fontSize: 14,
+                      fontSize: 18,
                       color: Colors.grey[700],
                     ),
                   ),
