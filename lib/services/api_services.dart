@@ -4,7 +4,7 @@ import 'package:transportflutter/models/planning/planning_depot/planning_depot.d
 import 'package:transportflutter/models/push/push_data.dart';
 
 class ApiService {
-  final String urlDotnet = '157c-154-126-80-82.ngrok-free.app'; // ngrok pour le moment hatreot 
+  final String urlDotnet = 'a6e3-154-126-80-78.ngrok-free.app'; // ngrok pour le moment hatreot 
   late final Dio dio;
 
   ApiService() {
