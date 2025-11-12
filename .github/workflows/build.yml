@@ -1,22 +1,45 @@
-name: Build
+name: CI (Flutter + SonarCloud)
+
 on:
   push:
-    branches:
-      - main
+    branches: [ main ]
   pull_request:
     types: [opened, synchronize, reopened]
+
 jobs:
-  sonarqube:
-    name: SonarQube
+  analyze:
+    name: Analyze & Scan
     runs-on: windows-latest
+
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
         with:
-          fetch-depth: 0  # Shallow clones should be disabled for a better relevancy of analysis
-      # The analysis requires to retrieve dependencies and build successfully
-      - name: Build
+          fetch-depth: 0
+
+      # Installe Flutter sur le runner Windows
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'       # ou fixe une version: '3.24.3'
+          cache: true
+
+      - name: Flutter version
+        run: flutter --version
+
+      - name: Get dependencies
         run: flutter pub get
-      - name: SonarQube Scan
-        uses: SonarSource/sonarqube-scan-action@v6
+
+      # (Optionnel mais recommandé) Analyse statique + tests + couverture
+      - name: Analyze
+        run: flutter analyze
+
+      - name: Test with coverage
+        run: flutter test --coverage
+
+      # Lancement du scan SonarCloud (PAS l’action SonarQube)
+      - name: SonarCloud Scan
+        uses: SonarSource/sonarcloud-github-action@v2
         env:
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}   # token SonarCloud (User > Security)
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # fourni automatiquement par GitHub
